@@ -11,10 +11,13 @@ logsDir = pwd;
 cd('..\classes');
 classesDir = pwd;
 
+cd('..\functions');
+funcDir = pwd;
+
 cd('..\libraries');
 libDir = pwd;
 
-addpath(logsDir, classesDir, libDir);
+addpath(logsDir, classesDir, funcDir, libDir);
 cd(curDir)
 
 
