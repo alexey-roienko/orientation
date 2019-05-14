@@ -26,7 +26,7 @@ cd(curDir)
 
 %% ====================== READING CONFIG ======================== %
 % Read 'config.ini'
-INI = ARDUINO_READER.fReadSettings('config_stm.ini');
+INI = LOGS_READER.fReadSettings('config_stm.ini');
 
 
 %% ============== SETTING LOGS NAMES AND TESTCASES ============== %
@@ -73,7 +73,6 @@ XC = XYZC(:,1) / gain(1) * refr;
 YC = XYZC(:,2) / gain(2) * refr;
 ZC = XYZC(:,3) / gain(3) * refr; 
 
-calibrData = [XC YC ZC];
 
 %% ================ DEPICT PLOTS FOR ANALYSIS ================= %
 figure('IntegerHandle', 'off', 'Name', 'STM calibration of raw Magnetometer Data');
@@ -94,14 +93,7 @@ plot(0,0,'o', .5,.5, 'kx');
 legend('Calibrated Data', 'Raw data');
 
 
-%% ================ DEPICT 3D PLOT FOR ANALYSIS ================= %
-if INI.visualization.plot3DCalibrMagnData
-    figure('IntegerHandle', 'off', 'Name', 'Raw Magnetometer Data Distribution');
-    plot3(calibrData(:,1), calibrData(:,2), calibrData(:,3));
-    xlim([-1 1]);   ylim([-1 1]);   zlim([-1 1]);
-    grid on,  axis square,  hold on
-    xlabel('X axis, Gauss'),  ylabel('Y axis, Gauss'),  zlabel('Z axis, Gauss')
-end
+
 
 
 

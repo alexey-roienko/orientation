@@ -13,8 +13,17 @@ classdef LOGS_READER < handle
             [~, name, ext] = fileparts(file);
             ini = varargin{1};
             
+            %% TactigonOne logs
+            if strcmpi(ini.general.logsSource, 'TactigonOne')
+                if contains(name, 'TO_') && strcmpi(ext, '.txt')
+                    [output, varargout{1}, varargout{2}, varargout{3}, varargout{4}] = ...
+                        LOGS_READER.fReadTOImuTXT(file);                
+                else
+                    error ('Read function cannot read the specified file. Please check your code.');
+                end
+            
             %% xSens logs
-            if strcmpi(ini.general.logsSource, 'xSens')
+            elseif strcmpi(ini.general.logsSource, 'xSens')
                 if contains(name, 'xSens_') && strcmpi(ext, '.txt')
                     [output, varargout{1}, varargout{2}, varargout{3}, varargout{4}] = ...
                         LOGS_READER.fReadXSensImuTXT(file);
@@ -36,21 +45,17 @@ classdef LOGS_READER < handle
         end   
         
         
-        %% Method for reading xSens log with Accel, Gyro, Magnet and Ground Truth Angles (from xSens board)        
-        % INPUT:
-        %    filename     - string, name of the log-file
-        % OUTPUT:
-        %    time         - sec., time samples of the log-file
-        %    varargout{1} - double, matrix of [length(time) x 3], each row is [acc_x acc_y acc_z]
-        %    varargout{2} - double, matrix of [length(time) x 3], each row is [gyro_x gyro_y gyro_z]
-        %    varargout{3} - double, matrix of [length(time) x 3], each row is [magn_x magn_y magn_z]
-        %    varargout{4} - double, matrix of [length(time) x 3], each row is [roll pitch yaw] (deg.)
-        function [time, varargout] = fReadXSensImuTXT(filename)            
+        %% Method for reading xSens log with Accel, Gyro, Magnet and
+        %  Ground Truth Angles (from xSens board)        
+        %       importfile(filename, startRow, endRow)
+        function [time, varargout] = fReadXSensImuTXT(filename, varargin)            
             %% Initialize variables
             delimiter = ',';
-            if nargin<=2
+            endRow = inf;
+            if nargin<2
                 startRow = 14;
-                endRow = inf;
+            else
+                startRow = varargin{1};
             end
 
             %% Open the text file.
@@ -203,6 +208,137 @@ classdef LOGS_READER < handle
             varargout{4}(:,3) = dataArray{1,cellNmbs(13)};
         end
 
+        
+        
+        %% Method for reading Tactigon One log with Accel, Gyro, Magnet and
+        %  Ground Truth Angles from Tactigon One board
+        function [time, varargout] = fReadTOImuTXT(fname)            
+            % Initialize variables.
+            if nargin<=2
+                startRow = 1;
+                endRow = inf;
+            end
+
+            % Format for each line of text:
+            %   column6: double (%f)
+            % For more information, see the TEXTSCAN documentation.
+            formatSpec = '%*6s%6f%*10s%6f%6f%6f%*10s%6f%6f%6f%*10s%5f%5f%5f%*12s%5f%5f%5f%[^\n\r]';
+
+            % Open the text file.
+            fileID = fopen(fname,'r');
+
+            % Read columns of data according to the format.
+            % This call is based on the structure of the file used to generate this
+            % code. If an error occurs for a different file, try regenerating the code
+            % from the Import Tool.
+            dataArray = textscan(fileID, formatSpec, endRow(1)-startRow(1)+1, 'Delimiter', '',...
+                'WhiteSpace', '', 'TextType', 'string', 'EmptyValue', NaN, ...
+                'HeaderLines', startRow(1)-1, 'ReturnOnError', false, 'EndOfLine', '\r\n');
+            
+            for block=2:length(startRow)
+                frewind(fileID);
+                dataArrayBlock = textscan(fileID, formatSpec, endRow(block)-startRow(block)+1,...
+                    'Delimiter', '', 'WhiteSpace', '', 'TextType', 'string', 'EmptyValue', NaN,...
+                    'HeaderLines', startRow(block)-1, 'ReturnOnError', false, 'EndOfLine', '\r\n');
+                dataArray{1} = [dataArray{1}; dataArrayBlock{1}];
+            end
+
+            % Close the text file.
+            fclose(fileID);
+
+            % Post processing for unimportable data.
+            % No unimportable data rules were applied during the import, so no post
+            % processing code is included. To generate code which works for
+            % unimportable data, select unimportable cells in a file and regenerate the
+            % script.
+
+            % Create output variable
+            time(1,1) = 0;
+            minCounter = 0;
+            for t=2:length(dataArray{1,1}(:))
+                % if the there is a new minute, add 60 sec. to the current
+                % time sample
+                if (dataArray{1,1}(t-1) > dataArray{1,1}(t))
+                    minCounter = minCounter + 1;
+                end
+                time(t,1) = (60*minCounter + dataArray{1,1}(t)) - dataArray{1,1}(1);
+            end
+            % Accel data
+            varargout{1}(:,1) = dataArray{1,2};
+            varargout{1}(:,2) = dataArray{1,3};
+            varargout{1}(:,3) = dataArray{1,4};       
+            % Gyro data
+            varargout{2}(:,1) = dataArray{1,5};
+            varargout{2}(:,2) = dataArray{1,6};
+            varargout{2}(:,3) = dataArray{1,7};       
+            % Magnet data
+            varargout{3}(:,1) = dataArray{1,8};
+            varargout{3}(:,2) = dataArray{1,9};
+            varargout{3}(:,3) = dataArray{1,10};            
+            % Angles data
+            varargout{4}(:,1) = dataArray{1,11};
+            varargout{4}(:,2) = dataArray{1,12};
+            varargout{4}(:,3) = dataArray{1,13};
+        end
+        
+        
+        
+        %% Method for reading Tactigon One Accelerometer log
+        function [time, varargout] = fReadTOAccelTXT(fname)            
+            % Initialize variables.
+            if nargin<=2
+                startRow = 1;
+                endRow = inf;
+            end
+
+            % Format for each line of text:
+            %   column6: double (%f)
+            % For more information, see the TEXTSCAN documentation.
+            formatSpec = '%*6s%6f%*13s%5f%*6s%5f%*6s%5f%[^\n\r]';
+
+            % Open the text file.
+            fileID = fopen(fname,'r');
+
+            % Read columns of data according to the format.
+            % This call is based on the structure of the file used to generate this
+            % code. If an error occurs for a different file, try regenerating the code
+            % from the Import Tool.
+            dataArray = textscan(fileID, formatSpec, endRow(1)-startRow(1)+1, 'Delimiter', '',...
+                'WhiteSpace', '', 'TextType', 'string', 'EmptyValue', NaN, ...
+                'HeaderLines', startRow(1)-1, 'ReturnOnError', false, 'EndOfLine', '\r\n');
+            
+            for block=2:length(startRow)
+                frewind(fileID);
+                dataArrayBlock = textscan(fileID, formatSpec, endRow(block)-startRow(block)+1,...
+                    'Delimiter', '', 'WhiteSpace', '', 'TextType', 'string', 'EmptyValue', NaN,...
+                    'HeaderLines', startRow(block)-1, 'ReturnOnError', false, 'EndOfLine', '\r\n');
+                dataArray{1} = [dataArray{1}; dataArrayBlock{1}];
+            end
+
+            % Close the text file.
+            fclose(fileID);
+
+            % Post processing for unimportable data.
+            % No unimportable data rules were applied during the import, so no post
+            % processing code is included. To generate code which works for
+            % unimportable data, select unimportable cells in a file and regenerate the
+            % script.
+
+            % Create output variable
+            time(1,1) = 0;
+            for t=2:length(dataArray{1,1}(:))
+                % if the there is a new minute, add 60 sec. to the current
+                % time sample
+                if (dataArray{1,1}(t-1) > dataArray{1,1}(t))
+                    time(t,1) = (60 + dataArray{1,1}(t)) - dataArray{1,1}(1);
+                else
+                    time(t,1) = dataArray{1,1}(t) - dataArray{1,1}(1);
+                end
+            end            
+            varargout{1}(:,1) = dataArray{1,2};
+            varargout{1}(:,2) = dataArray{1,3};
+            varargout{1}(:,3) = dataArray{1,4};            
+        end
         
         
         %% Method for reading an image file
