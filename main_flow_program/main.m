@@ -5,7 +5,7 @@ clear, clc;
 
 %% ===================== PATHES SETTINGS ========================= %
 curDir = pwd;
-cd('logs');
+cd('..\logs');
 logsDir = pwd;
 
 cd('..\classes');
