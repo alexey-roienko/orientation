@@ -5,7 +5,7 @@ clear, clc;
 
 %% ===================== PATHES SETTINGS ========================= %
 curDir = pwd;
-cd('..\logs');
+cd('..\logs\Accel');
 logsDir = pwd;
 
 cd('..\classes');
@@ -23,7 +23,7 @@ cd(curDir)
 
 %% ====================== READING CONFIG ======================== %
 % Read 'config.ini'
-INI = LOGS_READER.fReadSettings('config.ini');
+INI = LOGS_READER.fReadSettings('..\config-files\config.ini');
 
 
 %% ======================= READING LOGS ========================= %

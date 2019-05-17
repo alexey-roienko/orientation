@@ -26,7 +26,7 @@ cd(curDir)
 
 %% ====================== READING CONFIG ======================== %
 % Read 'config.ini'
-INI = LOGS_READER.fReadSettings('config_stm.ini');
+INI = LOGS_READER.fReadSettings('..\config-files\config_stm.ini');
 
 
 %% ============== SETTING LOGS NAMES AND TESTCASES ============== %
